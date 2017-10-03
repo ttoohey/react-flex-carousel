@@ -4,7 +4,7 @@
   "description": "A simple responsive Carousel powered by React and CSS Flexbox",
   "main": "index.js",
   "scripts": {
-    "prepublish": "babel --presets es2015,react,stage-0 carousel.js > index.js",
+    "prepare": "babel --presets es2015,react,stage-0 carousel.js > index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
