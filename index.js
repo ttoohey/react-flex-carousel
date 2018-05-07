@@ -32,7 +32,7 @@ var Carousel = function (_Component) {
 
 		var _this = _possibleConstructorReturn(this, (Carousel.__proto__ || Object.getPrototypeOf(Carousel)).call(this, props));
 
-		_this.state = { slide: 1, dragging: null, sliding: false, offset: 0 }; // slide index start from 1
+		_this.state = { slide: props.initialSlide, dragging: null, sliding: false, offset: 0 };
 		_this.setTimer = _this.setTimer.bind(_this);
 		_this.clearTimer = _this.clearTimer.bind(_this);
 		_this.events = {
@@ -91,7 +91,7 @@ var Carousel = function (_Component) {
 		value: function changeSlide(slide) {
 			if (document.hidden) return; // run only when page is visible
 			if (this.props.slideWillChange && !this.props.slideWillChange(slide, this.state.slide)) return;
-			if (slide >= 0 && slide <= _react2.default.Children.count(this.props.children) + 1) this.setState({ slide: slide, sliding: true, dragging: null }, this.setTimer);
+			if (slide >= 0 && slide <= _react2.default.Children.count(this.props.children) + 1) this.setState({ slide: slide, sliding: true, dragging: null, offset: 0 }, this.setTimer);
 		}
 	}, {
 		key: 'onDraggingStart',
@@ -118,13 +118,14 @@ var Carousel = function (_Component) {
 	}, {
 		key: 'onDraggingEnd',
 		value: function onDraggingEnd(event) {
+			var sliderWidth = event.currentTarget.clientWidth;
 			var _state2 = this.state,
 			    slide = _state2.slide,
 			    offset = _state2.offset,
 			    dragging = _state2.dragging;
 
 			if (!dragging) return;
-			var target = Math.abs(offset) > this.slider.clientWidth / 5 ? offset > 0 ? slide - 1 : slide + 1 : slide;
+			var target = Math.abs(offset) > sliderWidth / 5 ? offset > 0 ? slide - 1 : slide + 1 : slide;
 			this.setState({ dragging: null }, this.changeSlide.bind(this, target));
 		}
 	}, {
@@ -158,6 +159,7 @@ var Carousel = function (_Component) {
 			delete props.transitionTimingFunction;
 			delete props.slideWillChange;
 			delete props.slideDidChange;
+			delete props.initialSlide;
 			var _state3 = this.state,
 			    slide = _state3.slide,
 			    sliding = _state3.sliding,
@@ -180,22 +182,21 @@ var Carousel = function (_Component) {
 				_extends({}, props, { style: Object.assign({}, props.style, {
 						position: 'relative',
 						overflowX: 'hidden',
-						touchAction: 'pan-y pinch-zoom',
-						willChange: 'transform'
+						touchAction: 'pan-y pinch-zoom'
 					}) }),
 				_react2.default.createElement(
 					'ul',
-					_extends({ ref: function ref(node) {
-							_this3.slider = node;
-						}, style: {
+					_extends({ style: {
 							listStyleType: 'none',
 							padding: 0,
 							margin: 0,
 							display: 'flex',
 							transitionProperty: sliding ? 'transform' : 'none',
-							transform: enabled ? dragging && offset !== 0 ? 'translateX(calc(' + offset * 1 + 'px - ' + slide * 100 + '%))' : 'translateX(-' + slide * 100 + '%)' : null,
+							transform: enabled ? offset !== 0 ? 'translateX(calc(' + offset * 1 + 'px - ' + slide * 100 + '%))' : 'translateX(-' + slide * 100 + '%)' : null,
 							transitionDuration: transitionDuration,
-							transitionTimingFunction: transitionTimingFunction
+							transitionTimingFunction: transitionTimingFunction,
+							contain: 'layout',
+							willChange: 'transform'
 						} }, this.events),
 					enabled && _react.Children.map(slides.slice(-1).concat(children, slides.slice(0, 1)), function (item, index) {
 						return _react2.default.createElement(
@@ -216,7 +217,7 @@ var Carousel = function (_Component) {
 						return _react2.default.createElement(
 							'li',
 							{ 'aria-current': slide === index + 1, onClick: _this3.changeSlide.bind(_this3, index + 1) },
-							index
+							index + 1
 						);
 					})
 				),
@@ -242,13 +243,15 @@ Carousel.propTypes = {
 	indicator: _propTypes2.default.bool,
 	slideWillChange: _propTypes2.default.func,
 	slideDidChange: _propTypes2.default.func,
+	initialSlide: _propTypes2.default.number,
 	children: _propTypes2.default.oneOfType([_propTypes2.default.arrayOf(_propTypes2.default.node), _propTypes2.default.node]).isRequired
 };
 
 Carousel.defaultProps = {
 	className: 'slider',
 	transitionDuration: '.8s',
-	transitionTimingFunction: 'ease-in-out'
+	transitionTimingFunction: 'ease-in-out',
+	initialSlide: 1 // slide index start from 1
 };
 
 exports.default = Carousel;
