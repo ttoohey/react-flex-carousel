@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 class Carousel extends Component {
 	constructor(props) {
 		super(props);
-		this.state = {slide: 1, dragging: null, sliding: false, offset: 0}; // slide index start from 1
+		this.state = {slide: props.initialSlide, dragging: null, sliding: false, offset: 0};
 		this.setTimer = this.setTimer.bind(this);
 		this.clearTimer = this.clearTimer.bind(this);
 		this.events = {
@@ -46,7 +46,7 @@ class Carousel extends Component {
 		if (document.hidden) return; // run only when page is visible
 		if (this.props.slideWillChange && !this.props.slideWillChange(slide, this.state.slide)) return;
 		if (slide >= 0 && slide <= React.Children.count(this.props.children) + 1)
-			this.setState({slide, sliding: true, dragging: null}, this.setTimer);
+			this.setState({slide, sliding: true, dragging: null, offset: 0}, this.setTimer);
 	}
 
 	onDraggingStart(event) {
@@ -66,9 +66,10 @@ class Carousel extends Component {
 		this.setState({offset});
 	}
 	onDraggingEnd(event) {
+		const sliderWidth = event.currentTarget.clientWidth;
 		const {slide, offset, dragging} = this.state;
 		if (!dragging) return;
-		const target = Math.abs(offset) > this.slider.clientWidth / 5 ? (offset > 0 ? slide - 1 : slide + 1) : slide;
+		const target = Math.abs(offset) > sliderWidth / 5 ? (offset > 0 ? slide - 1 : slide + 1) : slide;
 		this.setState({dragging: null}, this.changeSlide.bind(this, target));
 	}
 	onClick(event) {
@@ -88,6 +89,7 @@ class Carousel extends Component {
 		delete props.transitionTimingFunction;
 		delete props.slideWillChange;
 		delete props.slideDidChange;
+		delete props.initialSlide;
 		const {slide, sliding, dragging, offset} = this.state;
 		const slides = Children.map(children, (child) => React.cloneElement(child, {key: child.key + '_clone'}));
 		const count = Children.count(children);
@@ -102,18 +104,19 @@ class Carousel extends Component {
 			<div {...props} style={Object.assign({}, props.style, {
 				position: 'relative',
 				overflowX: 'hidden',
-				touchAction: 'pan-y pinch-zoom',
-				willChange: 'transform'
+				touchAction: 'pan-y pinch-zoom'
 			})}>
-				<ul ref={node => {this.slider = node;}} style={{
+				<ul style={{
 					listStyleType: 'none',
 					padding: 0,
 					margin: 0,
 					display: 'flex',
 					transitionProperty: sliding ? 'transform' : 'none',
-					transform: enabled ? (dragging && offset !== 0 ? 'translateX(calc(' + (offset * 1) + 'px - ' + slide * 100 + '%))' : 'translateX(-' + slide * 100 + '%)') : null,
+					transform: enabled ? (offset !== 0 ? 'translateX(calc(' + (offset * 1) + 'px - ' + slide * 100 + '%))' : 'translateX(-' + slide * 100 + '%)') : null,
 					transitionDuration,
-					transitionTimingFunction
+					transitionTimingFunction,
+					contain: 'layout',
+					willChange: 'transform'
 				}} {...this.events}>
 					{enabled && Children.map(slides.slice(-1).concat(children, slides.slice(0, 1)),
 						(item, index) => <li aria-current={slide === index} style={slideStyle}>{item}</li>) || <li>{children}</li>
@@ -122,7 +125,7 @@ class Carousel extends Component {
 				{enabled && indicator && <ol>
 					{Children.map(children, (item, index) =>
 						<li aria-current={slide === index + 1} onClick={this.changeSlide.bind(this, index + 1)}>
-							{index}
+							{index + 1}
 						</li>
 					)}
 				</ol>}
@@ -144,6 +147,7 @@ Carousel.propTypes = {
 	indicator: PropTypes.bool,
 	slideWillChange: PropTypes.func,
 	slideDidChange: PropTypes.func,
+	initialSlide: PropTypes.number,
 	children: PropTypes.oneOfType([
 		PropTypes.arrayOf(PropTypes.node),
 		PropTypes.node
@@ -154,6 +158,7 @@ Carousel.defaultProps = {
 	className: 'slider',
 	transitionDuration: '.8s',
 	transitionTimingFunction: 'ease-in-out',
+	initialSlide: 1 // slide index start from 1
 };
 
 export default Carousel;
